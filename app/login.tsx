@@ -51,7 +51,8 @@ export default function Login() {
             await setDoc(doc(db, "users", user.uid), {
                 email: user.email,
                 createdAt: new Date().toISOString(),
-                tasks: []
+                tasks: [],
+                pushToken: "",
             });
 
             Alert.alert("Успех", "Аккаунт и профиль в БД созданы!");
