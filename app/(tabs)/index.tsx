@@ -1,4 +1,4 @@
-import {FlatList, Pressable, StyleSheet, Text, TextInput} from 'react-native';
+import {Alert, FlatList, Pressable, StyleSheet, Text, TextInput} from 'react-native';
 import {SafeAreaView} from "react-native-safe-area-context";
 import {addDoc, collection, deleteDoc, onSnapshot, orderBy, query, updateDoc, where} from "firebase/firestore";
 import {auth, db} from "@/firebaseConfig";
@@ -8,6 +8,18 @@ import * as Notifications from 'expo-notifications';
 import {ITask} from "@/types";
 import {TaskCard} from "@/components/TaskItem";
 import {useNotifications} from "@/hooks/useNotifications";
+import {z} from "zod";
+
+export const CreateTaskSchema = z.object({
+    userId: z.string(),
+    text: z.string()
+        .min(3, "Минимум 3 символа для задачи")
+        .max(100, "Слишком длинное описание"),
+    completed: z.boolean().default(false),
+    createdAt: z.string().datetime(),
+})
+
+export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;
 
 export default function HomeScreen() {
     const [text, setText] = useState("");
@@ -36,18 +48,31 @@ export default function HomeScreen() {
 
     // Cоздание задачи
     const createTask = async () => {
-        if (!auth.currentUser || text.trim() === "") return;
-        try {
-            await addDoc(collection(db, "tasks"), {
-                userId: auth.currentUser.uid,
-                createdAt: new Date().toISOString(),
-                text: text,
-                completed: false
-            });
+        if (!auth.currentUser) return;
 
+        // 1. Собираем объект для проверки
+        const rawTask = {
+            userId: auth.currentUser.uid,
+            text: text,
+            completed: false,
+            createdAt: new Date().toISOString(),
+        };
+
+        // 2. Валидируем через Zod
+        const validation = CreateTaskSchema.safeParse(rawTask);
+
+        if (!validation.success) {
+            // Если данные кривые — показываем первую ошибку из Zod
+            Alert.alert("Ошибка", validation.error.issues[0].message);
+            return;
+        }
+
+        // 3. Если всё ок, отправляем в БД проверенные данные
+        try {
+            await addDoc(collection(db, "tasks"), validation.data);
             setText("");
         } catch (error) {
-            console.error(error);
+            console.error("Ошибка Firebase:", error);
         }
     }
 

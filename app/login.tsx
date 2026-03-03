@@ -15,7 +15,6 @@ export default function Login() {
     const router = useRouter();
 
 
-
     const handleLogin = async () => {
         const validation = validateAuth(email, password);
 

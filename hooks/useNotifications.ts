@@ -51,11 +51,10 @@ export const useNotifications = () => {
                 if (auth.currentUser) {
                     const userRef = doc(db, "users", auth.currentUser.uid);
 
-                    // Используем setDoc с merge: true
-                    // Это обновит пустую строку на реальный токен
+
                     await setDoc(userRef, {
                         pushToken: token,
-                        lastLogin: new Date().toISOString() // полезно знать, когда юзер заходил
+                        lastLogin: new Date().toISOString()
                     }, { merge: true });
 
                     console.log("🚀 Токен успешно обновлен в Firestore!");
@@ -65,7 +64,6 @@ export const useNotifications = () => {
                 console.log('Ошибка при получении токена:', e);
             }
 
-            // Настройка канала для Android
             if (Platform.OS === 'android') {
                 Notifications.setNotificationChannelAsync('default', {
                     name: 'default',

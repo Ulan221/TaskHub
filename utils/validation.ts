@@ -1,18 +1,21 @@
+import { z } from "zod";
+
+export const AuthSchema = z.object({
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 
 export const validateAuth = (email: string, password: string) => {
-    if (!email.includes('@')) {
+    const result = AuthSchema.safeParse({email, password});
+
+    if (!result.success) {
         return {
             isValid: false,
-            errorMessage: "Please enter a valid email"
+            errorMessage: result.error.issues[0].message
         };
     }
-    if (password.length < 6) {
-        return {
-            isValid: false,
-            errorMessage: "Please enter at least 6 characters"
-        };
-    }
+
     return {
         isValid: true,
         errorMessage: null
